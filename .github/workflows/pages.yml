@@ -1,0 +1,148 @@
+name: Publicar START Brand en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preparar sitio
+        shell: bash
+        env:
+          SOURCE: https://http-brand-x-immersive.iaravalentino33.chatgpt.site
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            mkdir -p "_site/$(dirname "$file")"
+            curl --retry 3 --retry-all-errors --location --fail --silent --show-error "$SOURCE/$file" --output "_site/$file"
+          done <<'FILES'
+assets/abril-editorial.png
+assets/abril-marrakech.jpg
+assets/abril-marrakech.mp4
+assets/abril-motion-00.jpg
+assets/abril-motion-00.mp4
+assets/abril-motion-01.jpg
+assets/abril-motion-01.mp4
+assets/abril-motion-02.jpg
+assets/abril-motion-02.mp4
+assets/abril-motion-03.jpg
+assets/abril-motion-03.mp4
+assets/abril-motion-04.jpg
+assets/abril-motion-04.mp4
+assets/abril-motion-05.jpg
+assets/abril-motion-05.mp4
+assets/abril-motion-06.jpg
+assets/abril-motion-06.mp4
+assets/abril-motion-07.jpg
+assets/abril-motion-07.mp4
+assets/abril-motion-09.jpg
+assets/abril-motion-09.mp4
+assets/abril-motion-10.jpg
+assets/abril-motion-10.mp4
+assets/abril-motion-11.jpg
+assets/abril-motion-11.mp4
+assets/abril-motion-13.jpg
+assets/abril-motion-13.mp4
+assets/abril-photo-01.jpg
+assets/abril-photo-02.jpg
+assets/abril-photo-05.jpg
+assets/abril-photo-06.jpg
+assets/abril-post.png
+assets/abril-profile.png
+assets/altiora-reel.png
+assets/altiora-tour.jpg
+assets/altiora-tour.mp4
+assets/altiora-walkthrough.jpg
+assets/altiora-walkthrough.mp4
+assets/altiora-web.png
+assets/beauty-hd.png
+assets/boots-tv.jpg
+assets/boots-tv.mp4
+assets/comment-1.png
+assets/comment-2.png
+assets/comment-3.png
+assets/comment-4.png
+assets/conversation-1.jpg
+assets/conversation-2.jpg
+assets/conversation-3.jpg
+assets/conversation-4.jpg
+assets/editorial-1.jpg
+assets/editorial-2.jpg
+assets/editorial-3.jpg
+assets/editorial-4.jpg
+assets/editorial-5.jpg
+assets/editorial-6.jpg
+assets/editorial-7.jpg
+assets/fashion-hd.png
+assets/furniture-demo.jpg
+assets/furniture-demo.mp4
+assets/mentora-web.png
+assets/original-1.jpg
+assets/original-10.jpg
+assets/original-2.jpg
+assets/original-3.png
+assets/original-4.jpg
+assets/original-5.jpg
+assets/original-6.jpg
+assets/original-7.jpg
+assets/original-8.jpg
+assets/original-9.jpg
+assets/start-break.jpg
+assets/start-break.mp4
+assets/start-campaign.jpg
+assets/start-detail.jpg
+assets/start-detail.mp4
+assets/start-film-mobile.jpg
+assets/start-film-mobile.mp4
+assets/start-film.jpg
+assets/start-film.mp4
+assets/start-no-smoke.jpg
+assets/vision-scroll.mp4
+assets/vision.jpg
+assets/vision.mp4
+assets/wellness.png
+base.css
+brand.css
+brand.js
+demo.html
+editorial.css
+experience.css
+experience.js
+index.html
+scroll-story.css
+scroll-story.js
+showcase.css
+showcase.js
+start-motion.js
+start.css
+FILES
+          touch _site/.nojekyll
+          test -s _site/index.html
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Subir sitio
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
