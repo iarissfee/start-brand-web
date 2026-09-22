@@ -1,4 +1,4 @@
-name: Publicar START Brand en GitHub Pages
+name: Cargar archivos de START Brand
 
 on:
   push:
@@ -6,32 +6,25 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  publicar:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  cargar:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Preparar sitio
+      - name: Abrir repositorio
+        uses: actions/checkout@v4
+      - name: Descargar versión final
         shell: bash
         env:
           SOURCE: https://http-brand-x-immersive.iaravalentino33.chatgpt.site
         run: |
           set -euo pipefail
-          mkdir -p _site
           while IFS= read -r file; do
             [ -z "$file" ] && continue
-            mkdir -p "_site/$(dirname "$file")"
-            curl --retry 3 --retry-all-errors --location --fail --silent --show-error "$SOURCE/$file" --output "_site/$file"
+            mkdir -p "$(dirname "$file")"
+            curl --retry 3 --retry-all-errors --location --fail --silent --show-error "$SOURCE/$file" --output "$file"
           done <<'FILES'
           assets/abril-editorial.png
           assets/abril-marrakech.jpg
@@ -133,16 +126,11 @@ jobs:
           start-motion.js
           start.css
           FILES
-          touch _site/.nojekyll
-          test -s _site/index.html
-      - name: Configurar GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - name: Subir sitio
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - name: Publicar
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Guardar archivos en GitHub
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets "*.css" "*.js" "*.html"
+          git commit -m "Subir versión final de START Brand [skip ci]"
+          git push
