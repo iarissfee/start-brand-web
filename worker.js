@@ -262,9 +262,98 @@ async function handleApi(request,env){
   await ensureSchema(env);
   const url=new URL(request.url);
   const path=url.pathname;
-  if(request.method!=="GET" && isCrossSite(request)) return json({error:"CROSS_SITE_BLOCKED"},403);
 
   if(path==="/api/health") return json({ok:true,db:true,service:"start-brand-campus"});
+
+  if(path==="/api/payments/mercadopago/webhook" && request.method==="POST"){
+    if(!await verifyMpWebhook(request,url,env.MP_WEBHOOK_SECRET)) return json({error:"INVALID_SIGNATURE"},401);
+    let body={}; try{ body=await request.json(); }catch(_){}
+    const paymentId=String(url.searchParams.get("data.id")||url.searchParams.get("data_id")||body?.data?.id||"");
+    if(paymentId){ try{ await syncPayment(env,paymentId); }catch(_){} }
+    return json({ok:true});
+  }
+
+  if(request.method!=="GET" && isCrossSite(request)) return json({error:"CROSS_SITE_BLOCKED"},403);
+
+  if(path==="/api/product" && request.method==="GET"){
+    const product=await env.DB.prepare("SELECT id,title,price_cents,currency,active FROM products WHERE id=?").bind(COURSE_ID).first();
+    return json({product});
+  }
+
+  if(path==="/api/checkout" && request.method==="POST"){
+    if(!env.MP_ACCESS_TOKEN) return json({error:"PAYMENTS_NOT_CONFIGURED"},503);
+    let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
+    const email=cleanText(body.email,254).toLowerCase(), name=cleanText(body.name,100);
+    if(!emailOk(email)||!name) return json({error:"INVALID_DATA"},400);
+    const product=await env.DB.prepare("SELECT * FROM products WHERE id=?").bind(COURSE_ID).first();
+    if(!product||!Number(product.active)||Number(product.price_cents)<=0) return json({error:"PRODUCT_NOT_AVAILABLE"},409);
+    const id=crypto.randomUUID(), claimRaw=randomToken(32), claimHash=await sha256Hex(claimRaw), t=now();
+    await env.DB.prepare("INSERT INTO purchases(id,email,name,product_id,amount_cents,currency,status,claim_token_hash,created_at,updated_at) VALUES(?,?,?,?,?,?,'created',?,?,?)").bind(id,email,name,product.id,Number(product.price_cents),product.currency,claimHash,t,t).run();
+    const origin=url.origin;
+    const preference={
+      items:[{id:product.id,title:product.title,quantity:1,currency_id:product.currency,unit_price:Number(product.price_cents)/100}],
+      payer:{email},
+      external_reference:id,
+      back_urls:{
+        success:origin+"/campus/payment.html?purchase="+encodeURIComponent(id),
+        pending:origin+"/campus/payment.html?purchase="+encodeURIComponent(id),
+        failure:origin+"/campus/payment.html?purchase="+encodeURIComponent(id)
+      },
+      auto_return:"approved",
+      notification_url:origin+"/api/payments/mercadopago/webhook",
+      metadata:{purchase_id:id}
+    };
+    const mp=await fetch("https://api.mercadopago.com/checkout/preferences",{
+      method:"POST",
+      headers:{Authorization:"Bearer "+env.MP_ACCESS_TOKEN,"Content-Type":"application/json","X-Idempotency-Key":id},
+      body:JSON.stringify(preference)
+    });
+    if(!mp.ok){
+      await env.DB.prepare("UPDATE purchases SET status='checkout_error',updated_at=? WHERE id=?").bind(now(),id).run();
+      return json({error:"CHECKOUT_CREATE_FAILED"},502);
+    }
+    const pref=await mp.json();
+    await env.DB.prepare("UPDATE purchases SET preference_id=?,status='pending',updated_at=? WHERE id=?").bind(String(pref.id||""),now(),id).run();
+    return json({ok:true,checkout_url:pref.init_point,purchase_id:id},200,{"set-cookie":purchaseCookie(claimRaw)});
+  }
+
+  if(path==="/api/purchase-status" && request.method==="GET"){
+    const purchaseId=cleanText(url.searchParams.get("purchase"),100);
+    const purchase=await purchaseFromCookie(request,env,purchaseId);
+    if(!purchase) return json({error:"PURCHASE_NOT_FOUND"},404);
+    return json({purchase:{id:purchase.id,email:purchase.email,name:purchase.name,status:purchase.status,mp_status:purchase.mp_status}});
+  }
+
+  if(path==="/api/purchase-sync" && request.method==="POST"){
+    let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
+    const purchaseId=cleanText(body.purchase_id,100), paymentId=cleanText(body.payment_id,100);
+    const purchase=await purchaseFromCookie(request,env,purchaseId);
+    if(!purchase) return json({error:"PURCHASE_NOT_FOUND"},404);
+    if(paymentId){ try{ await syncPayment(env,paymentId); }catch(_){} }
+    const fresh=await env.DB.prepare("SELECT id,email,name,status,mp_status FROM purchases WHERE id=?").bind(purchaseId).first();
+    return json({purchase:fresh});
+  }
+
+  if(path==="/api/claim-purchase" && request.method==="POST"){
+    let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
+    const purchaseId=cleanText(body.purchase_id,100), password=body.password;
+    if(!passwordOk(password)) return json({error:"WEAK_PASSWORD","message":"Usá 12+ caracteres, mayúscula, minúscula y número."},400);
+    const purchase=await purchaseFromCookie(request,env,purchaseId);
+    if(!purchase||purchase.status!=="approved") return json({error:"PAYMENT_NOT_APPROVED"},403);
+    const existing=await env.DB.prepare("SELECT * FROM users WHERE email=? LIMIT 1").bind(purchase.email).first();
+    if(existing){
+      await env.DB.prepare("INSERT INTO enrollments(user_id,product_id,source,purchase_id,status,created_at) VALUES(?,?,'payment',?,'active',?) ON CONFLICT(user_id,product_id) DO UPDATE SET status='active',purchase_id=excluded.purchase_id").bind(existing.id,purchase.product_id,purchase.id,now()).run();
+      return json({error:"ACCOUNT_EXISTS_LOGIN","message":"Ese email ya tiene cuenta. Iniciá sesión para entrar."},409);
+    }
+    const pw=await newPasswordRecord(password), userId=crypto.randomUUID(), t=now();
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO users(id,email,name,password_hash,password_salt,role,status,created_at,updated_at) VALUES(?,?,?,?,?,'student','active',?,?)").bind(userId,purchase.email,purchase.name,pw.hash,pw.salt,t,t),
+      env.DB.prepare("INSERT INTO enrollments(user_id,product_id,source,purchase_id,status,created_at) VALUES(?,?,'payment',?,'active',?)").bind(userId,purchase.product_id,purchase.id,t),
+      env.DB.prepare("UPDATE purchases SET status='claimed',updated_at=? WHERE id=?").bind(t,purchase.id)
+    ]);
+    const s=await createSession(env,userId);
+    return json({ok:true},200,{"set-cookie":sessionCookie(s.raw)});
+  }
 
   if(path==="/api/bootstrap" && request.method==="POST"){
     const admin=await env.DB.prepare("SELECT id FROM users WHERE role='admin' LIMIT 1").first();
