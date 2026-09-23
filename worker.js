@@ -501,13 +501,22 @@ async function handleApi(request,env){
     if(s.role!=="admin") return json({error:"FORBIDDEN"},403);
 
     if(path==="/api/admin/dashboard" && request.method==="GET"){
-      const [users,invites,mentor,mods]=await Promise.all([
+      const [users,invites,mentor,mods,product,purchases]=await Promise.all([
         env.DB.prepare("SELECT id,email,name,role,status,created_at FROM users ORDER BY created_at DESC LIMIT 500").all(),
         env.DB.prepare("SELECT email,name,expires_at,used_at,created_at FROM invites ORDER BY created_at DESC LIMIT 100").all(),
         env.DB.prepare("SELECT mr.id,mr.session_name,mr.preferred_date,mr.slot,mr.notes,mr.status,mr.meet_url,mr.created_at,u.email,u.name FROM mentor_requests mr JOIN users u ON u.id=mr.user_id ORDER BY mr.created_at DESC LIMIT 200").all(),
-        env.DB.prepare("SELECT id,title,video_url FROM modules ORDER BY id").all()
+        env.DB.prepare("SELECT id,title,video_url FROM modules ORDER BY id").all(),
+        env.DB.prepare("SELECT id,title,price_cents,currency,active FROM products WHERE id=?").bind(COURSE_ID).first(),
+        env.DB.prepare("SELECT id,email,name,amount_cents,currency,status,mp_status,created_at FROM purchases ORDER BY created_at DESC LIMIT 200").all()
       ]);
-      return json({users:users.results||[],invites:invites.results||[],mentoring:mentor.results||[],modules:mods.results||[]});
+      return json({users:users.results||[],invites:invites.results||[],mentoring:mentor.results||[],modules:mods.results||[],product,purchases:purchases.results||[]});
+    }
+    if(path==="/api/admin/product" && request.method==="POST"){
+      let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
+      const title=cleanText(body.title,140), cents=Math.round(Number(body.price_ars||0)*100), active=body.active?1:0;
+      if(!title||!Number.isFinite(cents)||cents<0||cents>100000000000) return json({error:"INVALID_PRODUCT"},400);
+      await env.DB.prepare("UPDATE products SET title=?,price_cents=?,currency='ARS',active=?,updated_at=? WHERE id=?").bind(title,cents,active,now(),COURSE_ID).run();
+      return json({ok:true});
     }
     if(path==="/api/admin/invites" && request.method==="POST"){
       let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
@@ -566,7 +575,9 @@ async function handleCampus(request,env){
     "/campus/login.html","/campus/login.js","/campus/auth.css",
     "/campus/activate.html","/campus/activate.js",
     "/campus/reset.html","/campus/reset.js",
-    "/campus/bootstrap.html","/campus/bootstrap.js"
+    "/campus/bootstrap.html","/campus/bootstrap.js",
+    "/campus/comprar.html","/campus/comprar.js",
+    "/campus/payment.html","/campus/payment.js"
   ]);
   if(path==="/campus/login") return redirect("/campus/login.html");
   if(path==="/campus/activate") return redirect("/campus/activate.html"+url.search);
@@ -582,7 +593,10 @@ async function handleCampus(request,env){
 
   if(!session) return redirect("/campus/login.html");
 
-  if(path==="/campus/"||path==="/campus/index.html") return serveAsset(request,env,"/campus/index.html",true);
+  if(path==="/campus/"||path==="/campus/index.html"){
+    if(!await hasCourseAccess(env,session)) return redirect("/campus/comprar.html");
+    return serveAsset(request,env,"/campus/index.html",true);
+  }
 
   const adminAsset=path==="/campus/admin.html"||path==="/campus/admin.js"||path==="/campus/admin.css";
   if(adminAsset && session.role!=="admin") return new Response("Forbidden",{status:403});
