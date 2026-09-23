@@ -569,41 +569,53 @@ async function handleApi(request,env){
 async function handleCampus(request,env){
   await ensureSchema(env);
   const url=new URL(request.url);
-  let path=url.pathname;
+  const path=url.pathname;
   if(path==="/campus") return redirect("/campus/");
-  const publicPaths=new Set([
-    "/campus/login.html","/campus/login.js","/campus/auth.css",
-    "/campus/activate.html","/campus/activate.js",
-    "/campus/reset.html","/campus/reset.js",
-    "/campus/bootstrap.html","/campus/bootstrap.js",
-    "/campus/comprar.html","/campus/comprar.js",
-    "/campus/payment.html","/campus/payment.js"
+
+  const canonicalHtml=new Map([
+    ["/campus/login.html","/campus/login"],
+    ["/campus/activate.html","/campus/activate"],
+    ["/campus/reset.html","/campus/reset"],
+    ["/campus/bootstrap.html","/campus/bootstrap"],
+    ["/campus/comprar.html","/campus/comprar"],
+    ["/campus/payment.html","/campus/payment"],
+    ["/campus/admin.html","/campus/admin"]
   ]);
-  if(path==="/campus/login") return redirect("/campus/login.html");
-  if(path==="/campus/activate") return redirect("/campus/activate.html"+url.search);
-  if(path==="/campus/reset") return redirect("/campus/reset.html"+url.search);
-  if(path==="/campus/bootstrap") return redirect("/campus/bootstrap.html"+url.search);
+  if(canonicalHtml.has(path)) return redirect(canonicalHtml.get(path)+url.search);
+
+  const publicPages=new Set([
+    "/campus/login","/campus/activate","/campus/reset",
+    "/campus/bootstrap","/campus/comprar","/campus/payment"
+  ]);
+  const publicAssets=new Set([
+    "/campus/login.js","/campus/auth.css",
+    "/campus/activate.js","/campus/reset.js","/campus/bootstrap.js",
+    "/campus/comprar.js","/campus/payment.js"
+  ]);
 
   const session=await getSession(request,env);
 
-  if(publicPaths.has(path)){
-    if(path==="/campus/login.html" && session) return redirect(session.role==="admin"?"/campus/admin.html":"/campus/");
+  if(publicPages.has(path)){
+    if(path==="/campus/login" && session) return redirect(session.role==="admin"?"/campus/admin":"/campus/");
+    return serveAsset(request,env,path,true);
+  }
+  if(publicAssets.has(path)) return serveAsset(request,env,path,true);
+
+  if(!session) return redirect("/campus/login");
+
+  if(path==="/campus/"||path==="/campus/index.html"){
+    if(!await hasCourseAccess(env,session)) return redirect("/campus/comprar");
+    return serveAsset(request,env,"/campus/",true);
+  }
+
+  if(path==="/campus/admin"){
+    if(session.role!=="admin") return new Response("Forbidden",{status:403});
     return serveAsset(request,env,path,true);
   }
 
-  if(!session) return redirect("/campus/login.html");
-
-  if(path==="/campus/"||path==="/campus/index.html"){
-    if(!await hasCourseAccess(env,session)) return redirect("/campus/comprar.html");
-    return serveAsset(request,env,"/campus/index.html",true);
-  }
-
-  const adminAsset=path==="/campus/admin.html"||path==="/campus/admin.js"||path==="/campus/admin.css";
-  if(adminAsset && session.role!=="admin") return new Response("Forbidden",{status:403});
-
   const allowedProtected=new Set([
     "/campus/campus.js","/campus/campus.css",
-    "/campus/admin.html","/campus/admin.js","/campus/admin.css"
+    "/campus/admin.js","/campus/admin.css"
   ]);
   if(allowedProtected.has(path)) return serveAsset(request,env,path,true);
   return new Response("Not found",{status:404});
