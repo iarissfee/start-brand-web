@@ -191,6 +191,60 @@ async function newPasswordRecord(password){
   const salt=randomToken(16);
   return {salt,hash:await hashPassword(password,salt)};
 }
+async function hmacSha256Hex(secret,message){
+  const key=await crypto.subtle.importKey("raw",enc(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  const sig=new Uint8Array(await crypto.subtle.sign("HMAC",key,enc(message)));
+  return Array.from(sig,b=>b.toString(16).padStart(2,"0")).join("");
+}
+function purchaseCookie(token,maxAge=86400){
+  return "sb_purchase="+encodeURIComponent(token)+"; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age="+maxAge;
+}
+async function hasCourseAccess(env,s){
+  if(s.role==="admin") return true;
+  const r=await env.DB.prepare("SELECT 1 ok FROM enrollments WHERE user_id=? AND product_id=? AND status='active' LIMIT 1").bind(s.user_id,COURSE_ID).first();
+  return !!r;
+}
+async function verifyMpWebhook(request,url,secret){
+  if(!secret) return false;
+  const sig=request.headers.get("x-signature")||"", reqId=request.headers.get("x-request-id")||"";
+  const dataId=(url.searchParams.get("data.id")||url.searchParams.get("data_id")||"").toLowerCase();
+  let ts="",v1="";
+  for(const p of sig.split(",")){
+    const i=p.indexOf("="); if(i<0) continue;
+    const k=p.slice(0,i).trim(),v=p.slice(i+1).trim();
+    if(k==="ts") ts=v; if(k==="v1") v1=v;
+  }
+  if(!ts||!v1) return false;
+  let manifest="";
+  if(dataId) manifest+="id:"+dataId+";";
+  if(reqId) manifest+="request-id:"+reqId+";";
+  manifest+="ts:"+ts+";";
+  return timingSafe(await hmacSha256Hex(secret,manifest),v1);
+}
+async function mpGetPayment(env,paymentId){
+  if(!env.MP_ACCESS_TOKEN) throw new Error("MP_NOT_CONFIGURED");
+  const r=await fetch("https://api.mercadopago.com/v1/payments/"+encodeURIComponent(paymentId),{headers:{Authorization:"Bearer "+env.MP_ACCESS_TOKEN}});
+  if(!r.ok) throw new Error("MP_LOOKUP_FAILED");
+  return r.json();
+}
+async function syncPayment(env,paymentId){
+  const p=await mpGetPayment(env,paymentId);
+  const purchaseId=cleanText(p.external_reference,100);
+  if(!purchaseId) throw new Error("NO_REFERENCE");
+  const purchase=await env.DB.prepare("SELECT * FROM purchases WHERE id=?").bind(purchaseId).first();
+  if(!purchase) throw new Error("PURCHASE_NOT_FOUND");
+  const cents=Math.round(Number(p.transaction_amount||0)*100);
+  if(cents!==Number(purchase.amount_cents)||String(p.currency_id||"")!==String(purchase.currency)) throw new Error("AMOUNT_MISMATCH");
+  const mp=String(p.status||"");
+  const local=mp==="approved"?"approved":["rejected","cancelled","refunded","charged_back"].includes(mp)?"failed":"pending";
+  await env.DB.prepare("UPDATE purchases SET status=?,payment_id=?,mp_status=?,updated_at=? WHERE id=?").bind(local,String(p.id||paymentId),mp,now(),purchaseId).run();
+  return {purchaseId,status:local,mpStatus:mp};
+}
+async function purchaseFromCookie(request,env,purchaseId){
+  const raw=parseCookies(request).sb_purchase;
+  if(!raw||!purchaseId) return null;
+  return env.DB.prepare("SELECT * FROM purchases WHERE id=? AND claim_token_hash=?").bind(purchaseId,await sha256Hex(raw)).first();
+}
 function cleanText(v,max=500){
   return typeof v==="string"?v.trim().slice(0,max):"";
 }
