@@ -18,7 +18,7 @@ q("#form").addEventListener("submit",async e=>{
     });
     const d=await r.json();
     if(!r.ok){
-      if(d.error==="INVALID_DATA") throw new Error("La contraseña debe tener 12 caracteres o más, con una mayúscula, una minúscula y un número.");
+      if(d.error==="INVALID_DATA") throw new Error("La contraseña debe tener 12 caracteres o más.");
       if(d.error==="BOOTSTRAP_CLOSED") throw new Error("La cuenta admin ya fue creada. Entrá desde el login.");
       throw new Error(d.message||d.error||"No se pudo crear la cuenta.");
     }
