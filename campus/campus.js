@@ -75,66 +75,21 @@ qs("#booking-form").addEventListener("submit",e=>{
  location.href="mailto:"+EMAIL+"?subject="+subject+"&body="+body
 });
 
-const templates={
-brief:`START BRAND — BRIEF DE MARCA
-
-1. ¿Qué vendés u ofrecés?
-2. ¿Qué problema concreto resolvés?
-3. ¿A quién querés atraer?
-4. ¿Qué cambia para esa persona después de trabajar/comprar con vos?
-5. ¿Qué te diferencia de otras opciones?
-6. ¿Qué tres palabras deberían describir tu marca?
-7. ¿Qué tres cosas tu marca nunca debería transmitir?
-8. ¿Cuál es la acción principal que querés que haga alguien al conocerte?
-9. ¿Qué objeciones aparecen antes de comprar?
-10. ¿Cuál es tu objetivo de los próximos 90 días?
-`,
-content:`START BRAND — MATRIZ DE CONTENIDO
-
-PILAR 1:
-Objetivo:
-Idea:
-Formato:
-Gancho:
-CTA:
-
-PILAR 2:
-Objetivo:
-Idea:
-Formato:
-Gancho:
-CTA:
-
-PILAR 3:
-Objetivo:
-Idea:
-Formato:
-Gancho:
-CTA:
-
-SEMANA:
-Lunes:
-Miércoles:
-Viernes:
-
-Regla START: cada publicación tiene una función. Atraer, conectar, demostrar o convertir.
-`,
-launch:`START BRAND — CHECKLIST DE LANZAMIENTO
-
-[ ] La propuesta se entiende en menos de 10 segundos.
-[ ] El titular habla del resultado / necesidad principal.
-[ ] El CTA principal es claro y se repite.
-[ ] Links de compra o contacto probados.
-[ ] Precio / modalidad / alcance claros.
-[ ] Página revisada en celular.
-[ ] Perfil de redes actualizado.
-[ ] 3 piezas de contenido listas.
-[ ] Mensaje de lanzamiento preparado.
-[ ] Respuestas para objeciones frecuentes.
-[ ] Seguimiento definido.
-[ ] Próximas 4 semanas de acciones anotadas.
-`
-};
-qsa("[data-download]").forEach(b=>b.onclick=()=>{
- const type=b.dataset.download;const blob=new Blob([templates[type]],{type:"text/plain;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="START-"+type+".txt";a.click();URL.revokeObjectURL(a.href)
-});
+const resources={
+brief:{title:"Brief de marca",subtitle:"Las preguntas esenciales antes de diseñar o comunicar.",items:[
+"¿Qué vendés u ofrecés?","¿Qué problema concreto resolvés?","¿A quién querés atraer?","¿Qué cambia para esa persona después de trabajar o comprar con vos?","¿Qué te diferencia de otras opciones?","¿Qué tres palabras deberían describir tu marca?","¿Qué tres cosas tu marca nunca debería transmitir?","¿Cuál es la acción principal que querés que haga alguien al conocerte?","¿Qué objeciones aparecen antes de comprar?","¿Cuál es tu objetivo de los próximos 90 días?"
+]},
+content:{title:"Matriz de contenido",subtitle:"Organizá contenido con una función concreta.",items:[
+"Pilar 1 · objetivo / idea / formato / gancho / CTA","Pilar 2 · objetivo / idea / formato / gancho / CTA","Pilar 3 · objetivo / idea / formato / gancho / CTA","Lunes · pieza / objetivo / CTA","Miércoles · pieza / objetivo / CTA","Viernes · pieza / objetivo / CTA","Regla START · cada publicación tiene una función: atraer, conectar, demostrar o convertir."
+]},
+launch:{title:"Checklist de lanzamiento",subtitle:"Revisá el sistema completo antes de salir.",checks:[
+"La propuesta se entiende en menos de 10 segundos.","El titular habla del resultado o necesidad principal.","El CTA principal es claro y se repite.","Links de compra o contacto probados.","Precio, modalidad y alcance claros.","Página revisada en celular.","Perfil de redes actualizado.","3 piezas de contenido listas.","Mensaje de lanzamiento preparado.","Respuestas para objeciones frecuentes.","Seguimiento definido.","Próximas 4 semanas de acciones anotadas."
+]}}
+function printResource(type){
+ const r=resources[type]; if(!r)return;
+ const rows=(r.items||r.checks).map((x,i)=>'<div class="row"><span>'+(r.checks?'□':String(i+1).padStart(2,"0"))+'</span><div><b>'+x+'</b><div class="lines"></div></div></div>').join("");
+ const w=window.open("","_blank","noopener,noreferrer"); if(!w)return;
+ w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>START BRAND · '+r.title+'</title><style>@page{margin:18mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;color:#111}.top{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:12px}.brand{font-weight:800;font-size:22px}.tag{font-size:10px;letter-spacing:.15em}.hero{padding:42px 0 26px}.hero small{color:#ff4f91;font-weight:700;letter-spacing:.12em}.hero h1{font-family:Georgia,serif;font-size:46px;margin:12px 0 8px}.hero p{color:#666;max-width:560px}.row{display:grid;grid-template-columns:38px 1fr;gap:12px;padding:18px 0;border-top:1px solid #ddd}.row>span{color:#ff4f91;font-weight:700}.row b{font-size:14px}.lines{height:54px;margin-top:10px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 17px,#ddd 18px)}.foot{margin-top:30px;border-top:2px solid #111;padding-top:10px;font-size:10px;display:flex;justify-content:space-between}@media print{button{display:none}}</style></head><body><div class="top"><div class="brand">START BRAND ↗</div><div class="tag">WORKBOOK · CAMPUS</div></div><div class="hero"><small>HACER &gt; ACUMULAR</small><h1>'+r.title+'</h1><p>'+r.subtitle+'</p></div>'+rows+'<div class="foot"><span>START BRAND · 2026</span><span>Guardá esta hoja como PDF o imprimila.</span></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>');
+ w.document.close()
+}
+qsa("[data-download]").forEach(b=>b.onclick=()=>printResource(b.dataset.download));
