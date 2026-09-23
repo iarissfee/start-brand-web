@@ -51,8 +51,7 @@ function timingSafe(a,b){
 }
 function emailOk(email){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)&&email.length<=254; }
 function passwordOk(p){
-  return typeof p==="string" && p.length>=12 && p.length<=128 &&
-    /[a-z]/.test(p) && /[A-Z]/.test(p) && /[0-9]/.test(p);
+  return typeof p==="string" && p.length>=12 && p.length<=128;
 }
 function parseCookies(request){
   const out={};
@@ -342,7 +341,7 @@ async function handleApi(request,env){
   if(path==="/api/claim-purchase" && request.method==="POST"){
     let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
     const purchaseId=cleanText(body.purchase_id,100), password=body.password;
-    if(!passwordOk(password)) return json({error:"WEAK_PASSWORD","message":"Usá 12+ caracteres, mayúscula, minúscula y número."},400);
+    if(!passwordOk(password)) return json({error:"WEAK_PASSWORD","message":"Usá una contraseña de 12 caracteres o más."},400);
     const purchase=await purchaseFromCookie(request,env,purchaseId);
     if(!purchase||purchase.status!=="approved") return json({error:"PAYMENT_NOT_APPROVED"},403);
     const existing=await env.DB.prepare("SELECT * FROM users WHERE email=? LIMIT 1").bind(purchase.email).first();
@@ -366,7 +365,7 @@ async function handleApi(request,env){
     let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
     const token=cleanText(body.token,200), email=cleanText(body.email,254).toLowerCase(), name=cleanText(body.name,100), password=body.password;
     if(!timingSafe(await sha256Hex(token),BOOTSTRAP_HASH)) return json({error:"INVALID_BOOTSTRAP"},403);
-    if(!emailOk(email)||!name||!passwordOk(password)) return json({error:"INVALID_DATA","message":"Usá un email válido y una contraseña de 12+ caracteres con mayúscula, minúscula y número."},400);
+    if(!emailOk(email)||!name||!passwordOk(password)) return json({error:"INVALID_DATA","message":"Usá un email válido y una contraseña de 12 caracteres o más."},400);
     const pw=await newPasswordRecord(password), id=crypto.randomUUID(), t=now();
     try{
       await env.DB.prepare("INSERT INTO users(id,email,name,password_hash,password_salt,role,status,created_at,updated_at) VALUES(?,?,?,?,?,'admin','active',?,?)").bind(id,email,name,pw.hash,pw.salt,t,t).run();
@@ -399,7 +398,7 @@ async function handleApi(request,env){
   if(path==="/api/activate" && request.method==="POST"){
     let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
     const token=cleanText(body.token,300), password=body.password;
-    if(!token||!passwordOk(password)) return json({error:"INVALID_DATA","message":"La contraseña debe tener 12+ caracteres, mayúscula, minúscula y número."},400);
+    if(!token||!passwordOk(password)) return json({error:"INVALID_DATA","message":"La contraseña debe tener 12 caracteres o más."},400);
     const tokenHash=await sha256Hex(token);
     const invite=await env.DB.prepare("SELECT * FROM invites WHERE token_hash=? AND used_at IS NULL AND expires_at>? LIMIT 1").bind(tokenHash,now()).first();
     if(!invite) return json({error:"INVALID_OR_EXPIRED_INVITE"},410);
@@ -491,7 +490,7 @@ async function handleApi(request,env){
   }
   if(path==="/api/change-password" && request.method==="POST"){
     let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
-    if(!passwordOk(body.new_password)) return json({error:"WEAK_PASSWORD","message":"Usá 12+ caracteres, mayúscula, minúscula y número."},400);
+    if(!passwordOk(body.new_password)) return json({error:"WEAK_PASSWORD","message":"Usá una contraseña de 12 caracteres o más."},400);
     const user=await env.DB.prepare("SELECT * FROM users WHERE id=?").bind(s.user_id).first();
     if(!await verifyPassword(body.current_password||"",user)) return json({error:"WRONG_PASSWORD"},403);
     const pw=await newPasswordRecord(body.new_password),t=now();
