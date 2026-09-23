@@ -1,48 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#080808"/>
-<title>START BRAND — Campus</title>
 <meta name="robots" content="noindex,nofollow"/>
+<title>START BRAND — Campus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Italiana&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="campus.css?v=1"/>
+<link rel="stylesheet" href="/campus/campus.css?v=3"/>
 </head>
 <body>
-<div class="noise"></div>
-
-<section class="gate" id="gate">
-  <div class="gate-card">
-    <a class="wordmark" href="../">START <span>BRAND</span> ↗</a>
-    <p class="kicker">CAMPUS PRIVADO · ALUMNOS</p>
-    <h1>Entrá a construir<br/><em>algo tuyo.</em></h1>
-    <p class="gate-copy">Clases, ejercicios, materiales y mentorías en un solo lugar.</p>
-    <form id="login-form">
-      <label>Tu nombre<input id="student-name" autocomplete="name" placeholder="Ej. Sofía"/></label>
-      <label>Código de acceso<input id="access-code" type="password" autocomplete="current-password" placeholder="••••••••••••"/></label>
-      <button class="btn primary" type="submit">Entrar al campus ↗</button>
-      <p class="error" id="login-error" aria-live="polite"></p>
-    </form>
-    <small>Acceso exclusivo para alumnas y alumnos de START BRAND.</small>
-  </div>
-</section>
-
-<div class="app" id="app" hidden>
-  <aside class="sidebar">
-    <a class="wordmark" href="../">START <span>BRAND</span> ↗</a>
-    <div class="student">
-      <span>HOLA,</span>
-      <strong id="student-display">ALUMNA</strong>
-    </div>
+<div class="noise" aria-hidden="true"></div>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <a class="wordmark" href="/">START <span>BRAND</span> ↗</a>
+    <div class="student"><span>HOLA,</span><strong id="student-display">—</strong><small id="student-email"></small></div>
     <nav>
       <button class="nav-btn active" data-view="home">Inicio</button>
       <button class="nav-btn" data-view="program">Programa</button>
       <button class="nav-btn" data-view="workspace">Mi tablero</button>
       <button class="nav-btn" data-view="mentoring">Mentorías 1:1</button>
       <button class="nav-btn" data-view="resources">Recursos</button>
+      <button class="nav-btn" data-view="account">Mi cuenta</button>
+      <a class="admin-link" id="admin-link" href="/campus/admin.html" hidden>Panel admin ↗</a>
     </nav>
     <div class="sidebar-bottom">
       <div class="mini-progress"><span>Tu avance</span><strong id="side-progress">0%</strong></div>
@@ -52,7 +34,7 @@
   </aside>
 
   <header class="mobile-top">
-    <a class="wordmark" href="../">START <span>BRAND</span></a>
+    <a class="wordmark" href="/">START <span>BRAND</span></a>
     <button id="mobile-menu">Menú +</button>
   </header>
 
@@ -60,53 +42,42 @@
     <section class="view active" data-view-panel="home">
       <div class="hero">
         <div>
-          <p class="kicker">START BRAND · PROGRAMA</p>
+          <p class="kicker">START BRAND · CAMPUS</p>
           <h1>Menos teoría.<br/><em>Más en marcha.</em></h1>
-          <p>Este campus no está pensado para acumular clases. Está pensado para que cada módulo termine en una decisión, una pieza o un avance concreto de tu marca.</p>
+          <p>Tu progreso, tus ejercicios y tus mentorías viven acá. Cada avance queda guardado en tu cuenta.</p>
           <button class="btn primary" data-go="program">Continuar mi programa ↗</button>
         </div>
         <div class="progress-card">
           <span>PROGRESO GENERAL</span>
           <strong id="hero-progress">0%</strong>
           <div class="big-bar"><i id="hero-bar"></i></div>
-          <p id="progress-message">Empezá por el diagnóstico y tu punto de partida.</p>
+          <p id="progress-message">Cargando tu recorrido…</p>
         </div>
       </div>
-
-      <div class="section-head">
-        <div><span>AHORA</span><h2>Tu próximo paso</h2></div>
-      </div>
+      <div class="section-head"><div><span>AHORA</span><h2>Tu próximo paso</h2></div></div>
       <div class="next-grid">
         <article class="next-card accent">
           <span id="next-number">01</span>
-          <h3 id="next-title">Punto de partida</h3>
-          <p id="next-desc">Definí dónde estás, qué querés construir y qué tiene que cambiar.</p>
+          <h3 id="next-title">Cargando…</h3>
+          <p id="next-desc"></p>
           <button class="text-btn" data-go="program">Abrir módulo →</button>
         </article>
         <article class="next-card">
           <span>1:1</span>
           <h3>Mentoría estratégica</h3>
-          <p>Cuando tengas los primeros módulos avanzados, reservá tu primera sesión.</p>
+          <p>Pedí una franja desde el campus y recibí el enlace de Meet cuando se confirme.</p>
           <button class="text-btn" data-go="mentoring">Ver mentorías →</button>
         </article>
       </div>
     </section>
 
     <section class="view" data-view-panel="program">
-      <div class="page-title">
-        <p class="kicker">TU RECORRIDO</p>
-        <h1>De una idea<br/><em>a una marca en marcha.</em></h1>
-        <p>Avanzá a tu ritmo. Marcá cada etapa cuando la hayas trabajado de verdad.</p>
-      </div>
+      <div class="page-title"><p class="kicker">TU RECORRIDO</p><h1>De una idea<br/><em>a una marca en marcha.</em></h1><p>Marcá cada etapa cuando la hayas trabajado de verdad. El avance queda asociado a tu cuenta.</p></div>
       <div class="module-list" id="module-list"></div>
     </section>
 
     <section class="view" data-view-panel="workspace">
-      <div class="page-title">
-        <p class="kicker">MI TABLERO</p>
-        <h1>No mires solamente.<br/><em>Escribilo.</em></h1>
-        <p>Tus respuestas quedan guardadas en este dispositivo. Podés volver y seguir trabajando cuando quieras.</p>
-      </div>
+      <div class="page-title"><p class="kicker">MI TABLERO</p><h1>No mires solamente.<br/><em>Escribilo.</em></h1><p>Tus respuestas se guardan de forma privada en tu cuenta.</p></div>
       <div class="workspace-grid">
         <label class="work-card"><span>01 · Mi objetivo</span><textarea data-note="goal" placeholder="¿Qué quiero que mi marca logre en los próximos 90 días?"></textarea></label>
         <label class="work-card"><span>02 · Mi público</span><textarea data-note="audience" placeholder="¿A quién quiero atraer y qué problema concreto tiene?"></textarea></label>
@@ -115,86 +86,58 @@
         <label class="work-card"><span>05 · Mis contenidos</span><textarea data-note="content" placeholder="3 pilares de contenido que voy a sostener."></textarea></label>
         <label class="work-card"><span>06 · Próximas acciones</span><textarea data-note="actions" placeholder="Mis 3 acciones concretas de esta semana."></textarea></label>
       </div>
-      <div class="save-note">✓ Se guarda automáticamente</div>
+      <div class="save-note" id="save-note">Guardado automático</div>
     </section>
 
     <section class="view" data-view-panel="mentoring">
-      <div class="page-title">
-        <p class="kicker">ACOMPAÑAMIENTO</p>
-        <h1>Tres llamadas.<br/><em>En el momento correcto.</em></h1>
-        <p>No son reuniones para “charlar del curso”. Cada sesión tiene un objetivo concreto y una preparación previa.</p>
-      </div>
+      <div class="page-title"><p class="kicker">ACOMPAÑAMIENTO</p><h1>Tres llamadas.<br/><em>En el momento correcto.</em></h1><p>Pedí una fecha y franja. Cuando la mentoría quede confirmada, vas a ver el enlace de Google Meet acá mismo.</p></div>
       <div class="mentor-grid">
-        <article class="mentor-card">
-          <span>MENTORÍA 01</span>
-          <h3>Estrategia & foco</h3>
-          <p>Revisamos posicionamiento, público y oferta. Salís con prioridades claras.</p>
-          <ul><li>Traé tu tablero completo</li><li>Duración sugerida: 45 min</li><li>Google Meet</li></ul>
-          <button class="btn outline booking-btn" data-session="Mentoría 01 · Estrategia & foco">Pedir horario ↗</button>
-        </article>
-        <article class="mentor-card featured">
-          <span>MENTORÍA 02</span>
-          <h3>Revisión & ajuste</h3>
-          <p>Miramos lo que implementaste: identidad, contenido y recorrido de venta.</p>
-          <ul><li>Traé avances reales</li><li>Duración sugerida: 45 min</li><li>Google Meet</li></ul>
-          <button class="btn primary booking-btn" data-session="Mentoría 02 · Revisión & ajuste">Pedir horario ↗</button>
-        </article>
-        <article class="mentor-card">
-          <span>MENTORÍA 03</span>
-          <h3>Lanzamiento & próximos pasos</h3>
-          <p>Cerramos el sistema y definimos qué sostener durante los próximos 30 días.</p>
-          <ul><li>Checklist final</li><li>Duración sugerida: 45 min</li><li>Google Meet</li></ul>
-          <button class="btn outline booking-btn" data-session="Mentoría 03 · Lanzamiento & próximos pasos">Pedir horario ↗</button>
-        </article>
+        <article class="mentor-card"><span>MENTORÍA 01</span><h3>Estrategia & foco</h3><p>Posicionamiento, público y oferta.</p><ul><li>Traé tu tablero completo</li><li>45 min sugeridos</li><li>Google Meet</li></ul><button class="btn outline booking-btn" data-session="Mentoría 01 · Estrategia & foco">Pedir horario ↗</button></article>
+        <article class="mentor-card featured"><span>MENTORÍA 02</span><h3>Revisión & ajuste</h3><p>Identidad, contenido y recorrido de venta.</p><ul><li>Traé avances reales</li><li>45 min sugeridos</li><li>Google Meet</li></ul><button class="btn primary booking-btn" data-session="Mentoría 02 · Revisión & ajuste">Pedir horario ↗</button></article>
+        <article class="mentor-card"><span>MENTORÍA 03</span><h3>Lanzamiento</h3><p>Sistema final y próximos 30 días.</p><ul><li>Checklist final</li><li>45 min sugeridos</li><li>Google Meet</li></ul><button class="btn outline booking-btn" data-session="Mentoría 03 · Lanzamiento">Pedir horario ↗</button></article>
       </div>
-
-      <div class="meet-flow">
-        <div>
-          <span class="kicker">SIN CALENDLY · SIN COSTOS</span>
-          <h2>¿Cómo funciona?</h2>
-        </div>
-        <ol>
-          <li><b>01</b><span>Pedís un horario desde este campus.</span></li>
-          <li><b>02</b><span>Coordinamos la franja disponible por mail.</span></li>
-          <li><b>03</b><span>Recibís la invitación de Google Calendar con el link de Meet.</span></li>
-        </ol>
-      </div>
+      <div class="section-head spaced"><div><span>MIS SOLICITUDES</span><h2>Mentorías</h2></div></div>
+      <div id="mentor-history" class="mentor-history"></div>
     </section>
 
     <section class="view" data-view-panel="resources">
-      <div class="page-title">
-        <p class="kicker">KIT START</p>
-        <h1>Material para<br/><em>hacer, no acumular.</em></h1>
-      </div>
+      <div class="page-title"><p class="kicker">KIT START</p><h1>Material para<br/><em>hacer, no acumular.</em></h1></div>
       <div class="resource-grid">
-        <button class="resource" data-download="brief"><span>PDF / PRINT</span><h3>Brief de marca</h3><p>Las preguntas esenciales antes de diseñar o comunicar.</p><b>Generar →</b></button>
-        <button class="resource" data-download="content"><span>PLANTILLA</span><h3>Matriz de contenido</h3><p>Organizá ideas por objetivo, formato y llamado a la acción.</p><b>Generar →</b></button>
-        <button class="resource" data-download="launch"><span>CHECKLIST</span><h3>Checklist de lanzamiento</h3><p>Todo lo que revisar antes de publicar o vender.</p><b>Generar →</b></button>
+        <button class="resource" data-download="brief"><span>WORKBOOK</span><h3>Brief de marca</h3><p>Las preguntas esenciales antes de diseñar o comunicar.</p><b>Descargar →</b></button>
+        <button class="resource" data-download="content"><span>PLANTILLA</span><h3>Matriz de contenido</h3><p>Organizá ideas por objetivo, formato y llamado a la acción.</p><b>Descargar →</b></button>
+        <button class="resource" data-download="launch"><span>CHECKLIST</span><h3>Checklist de lanzamiento</h3><p>Todo lo que revisar antes de publicar o vender.</p><b>Descargar →</b></button>
       </div>
+    </section>
+
+    <section class="view" data-view-panel="account">
+      <div class="page-title"><p class="kicker">SEGURIDAD</p><h1>Tu cuenta.<br/><em>Solo tuya.</em></h1><p>Tu progreso y tus notas están vinculados a este usuario, no al dispositivo.</p></div>
+      <form class="account-card" id="password-form">
+        <label>Contraseña actual<input type="password" id="current-password" autocomplete="current-password" required/></label>
+        <label>Nueva contraseña<input type="password" id="new-password" autocomplete="new-password" minlength="12" required/></label>
+        <small>12 caracteres o más, con mayúscula, minúscula y número.</small>
+        <button class="btn primary" type="submit">Cambiar contraseña ↗</button>
+        <p id="password-status" class="form-status"></p>
+      </form>
     </section>
   </main>
 </div>
 
-<dialog id="module-dialog">
-  <button class="close-dialog" id="close-module">Cerrar ✕</button>
-  <div id="module-content"></div>
-</dialog>
-
+<dialog id="module-dialog"><button class="close-dialog" id="close-module">Cerrar ✕</button><div id="module-content"></div></dialog>
 <dialog id="booking-dialog">
   <button class="close-dialog" id="close-booking">Cerrar ✕</button>
   <div class="booking-content">
-    <span class="kicker">MENTORÍA 1:1</span>
-    <h2 id="booking-title">Reservar sesión</h2>
-    <p>Elegí una franja orientativa. Al enviar, se abre tu correo con el pedido listo para coordinar. Después recibís la invitación de Google Calendar con Meet.</p>
+    <span class="kicker">MENTORÍA 1:1</span><h2 id="booking-title">Reservar sesión</h2>
+    <p>Elegí una fecha y una franja. El pedido queda registrado en tu cuenta.</p>
     <form id="booking-form">
       <label>Fecha preferida<input id="booking-date" type="date" required/></label>
       <label>Franja horaria<select id="booking-slot" required><option value="">Elegir</option><option>09:00–12:00</option><option>12:00–15:00</option><option>15:00–18:00</option><option>18:00–20:00</option></select></label>
-      <label>¿Qué querés revisar?<textarea id="booking-notes" placeholder="Contanos brevemente qué querés trabajar en esta sesión."></textarea></label>
-      <button class="btn primary" type="submit">Enviar pedido de horario ↗</button>
+      <label>¿Qué querés revisar?<textarea id="booking-notes" maxlength="2000"></textarea></label>
+      <button class="btn primary" type="submit">Enviar solicitud ↗</button>
+      <p id="booking-status" class="form-status"></p>
     </form>
   </div>
 </dialog>
 
-<script src="campus.js?v=1" defer></script>
+<script src="/campus/campus.js?v=3" defer></script>
 </body>
 </html>
