@@ -1,7 +1,8 @@
-const BOOTSTRAP_HASH = "7d17ea938e8e889ea85f7345da93cc6692c0a7f5e530c007b5ebab7c93d564a6";
+const BOOTSTRAP_HASH = "f434c141ec71e788baa6b5d3a812f2abc21280a9ea4bcadc556fc61aa96f26d7";
 const SESSION_DAYS = 7;
 const PBKDF2_ITERATIONS = 210000;
-const MAX_BODY = 20000;
+const MAX_BODY = 24000;
+const COURSE_ID = "start-brand-course";
 let schemaPromise;
 
 const MODULE_SEED = [
