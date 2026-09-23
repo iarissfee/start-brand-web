@@ -12,44 +12,92 @@ const modules=[
 
 function sha256(text){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(text)).then(buf=>Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join(""))}
 const qs=s=>document.querySelector(s), qsa=s=>[...document.querySelectorAll(s)];
-const key="startBrandCampus";
-const state=JSON.parse(localStorage.getItem(key)||"{}");
-state.completed=state.completed||[];
-state.notes=state.notes||{};
-function save(){localStorage.setItem(key,JSON.stringify(state))}
-function showApp(){qs("#gate").hidden=true;qs("#app").hidden=false;qs("#student-display").textContent=(state.name||"ALUMNA").toUpperCase();render();loadNotes()}
+const LEGACY_KEY="startBrandCampus";
+const PROFILES_KEY="startBrandCampusProfilesV2";
+const SESSION_KEY="startBrandCampusCurrentUser";
+const normalizeUser=name=>name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+let profiles=JSON.parse(localStorage.getItem(PROFILES_KEY)||"{}");
+let currentUserId=localStorage.getItem(SESSION_KEY)||"";
+let profile=currentUserId&&profiles[currentUserId]?profiles[currentUserId]:null;
+
+(function migrateLegacy(){
+ try{
+  const legacy=JSON.parse(localStorage.getItem(LEGACY_KEY)||"null");
+  if(legacy&&legacy.name){
+   const id=normalizeUser(legacy.name);
+   if(!profiles[id]){
+    profiles[id]={name:legacy.name,completed:Array.isArray(legacy.completed)?legacy.completed:[],notes:legacy.notes||{}};
+    localStorage.setItem(PROFILES_KEY,JSON.stringify(profiles));
+   }
+   if(legacy.loggedIn){
+    currentUserId=id;
+    profile=profiles[id];
+    localStorage.setItem(SESSION_KEY,id);
+   }
+   localStorage.removeItem(LEGACY_KEY);
+  }
+ }catch(_){}
+})();
+
+function saveProfile(){
+ if(!profile||!currentUserId)return;
+ profiles[currentUserId]=profile;
+ localStorage.setItem(PROFILES_KEY,JSON.stringify(profiles));
+}
+function showApp(){
+ qs("#gate").hidden=true;
+ qs("#app").hidden=false;
+ qs("#student-display").textContent=(profile?.name||"ALUMNA").toUpperCase();
+ render();
+ loadNotes();
+}
 function showGate(){qs("#gate").hidden=false;qs("#app").hidden=true}
-if(state.loggedIn)showApp(); else showGate();
+if(profile)showApp(); else showGate();
 
 qs("#login-form").addEventListener("submit",async e=>{
- e.preventDefault(); const name=qs("#student-name").value.trim(); const code=qs("#access-code").value;
+ e.preventDefault();
+ const name=qs("#student-name").value.trim();
+ const code=qs("#access-code").value;
  if(!name){qs("#login-error").textContent="Escribí tu nombre.";return}
  const h=await sha256(code);
  if(h!==ACCESS_HASH){qs("#login-error").textContent="Código incorrecto. Revisalo y volvé a intentar.";return}
- state.loggedIn=true;state.name=name;save();showApp()
+ currentUserId=normalizeUser(name);
+ if(!profiles[currentUserId])profiles[currentUserId]={name,completed:[],notes:{}};
+ profile=profiles[currentUserId];
+ profile.name=name;
+ profile.completed=Array.isArray(profile.completed)?profile.completed:[];
+ profile.notes=profile.notes||{};
+ localStorage.setItem(SESSION_KEY,currentUserId);
+ saveProfile();
+ showApp();
 });
-qs("#logout").addEventListener("click",()=>{state.loggedIn=false;save();location.reload()});
+qs("#logout").addEventListener("click",()=>{
+ localStorage.removeItem(SESSION_KEY);
+ currentUserId="";
+ profile=null;
+ location.reload();
+});
 
-function progress(){return Math.round((state.completed.length/modules.length)*100)}
+function progress(){return Math.round((profile.completed.length/modules.length)*100)}
 function render(){
  const list=qs("#module-list");list.innerHTML="";
  modules.forEach(m=>{
-  const done=state.completed.includes(m.id);
+  const done=profile.completed.includes(m.id);
   const row=document.createElement("article");row.className="module";
   row.innerHTML='<div class="module-number">'+String(m.id).padStart(2,"0")+'</div><div><h3>'+m.title+'</h3><p>'+m.desc+'</p></div><div class="module-actions"><button class="open-module" data-id="'+m.id+'">Abrir →</button><button class="complete '+(done?"done":"")+'" data-complete="'+m.id+'" aria-label="Marcar módulo como completado">'+(done?"✓":"○")+'</button></div>';
   list.appendChild(row)
  });
  const p=progress();["#hero-progress","#side-progress"].forEach(s=>qs(s).textContent=p+"%");["#hero-bar","#side-bar"].forEach(s=>qs(s).style.width=p+"%");
  qs("#progress-message").textContent=p===100?"Programa completado. Ahora el trabajo es sostenerlo.":p>=60?"Ya hay sistema. Seguí cerrando las piezas que faltan.":p>=20?"Bien. Estás convirtiendo ideas en decisiones concretas.":"Empezá por el diagnóstico y tu punto de partida.";
- const next=modules.find(m=>!state.completed.includes(m.id))||modules[modules.length-1];
+ const next=modules.find(m=>!profile.completed.includes(m.id))||modules[modules.length-1];
  qs("#next-number").textContent=String(next.id).padStart(2,"0");qs("#next-title").textContent=next.title;qs("#next-desc").textContent=next.desc;
  qsa(".open-module").forEach(b=>b.onclick=()=>openModule(+b.dataset.id));
  qsa(".complete").forEach(b=>b.onclick=()=>toggleComplete(+b.dataset.complete));
 }
-function toggleComplete(id){const i=state.completed.indexOf(id);if(i>=0)state.completed.splice(i,1);else state.completed.push(id);save();render()}
+function toggleComplete(id){const i=profile.completed.indexOf(id);if(i>=0)profile.completed.splice(i,1);else profile.completed.push(id);saveProfile();render()}
 function openModule(id){
  const m=modules.find(x=>x.id===id);
- qs("#module-content").innerHTML='<span class="lesson-tag">MÓDULO '+String(m.id).padStart(2,"0")+'</span><h2 class="lesson-title">'+m.title+'</h2><p class="lesson-copy">'+m.copy+'</p><div class="video-placeholder"><div><b>CLASE '+String(m.id).padStart(2,"0")+'</b><span>Espacio listo para tu video de YouTube no listado.</span></div></div><div class="exercise"><h4>Antes de marcarlo como completado</h4><ol>'+m.exercise.map(x=>"<li>"+x+"</li>").join("")+'</ol><button class="btn '+(state.completed.includes(id)?"outline":"primary")+'" id="modal-complete">'+(state.completed.includes(id)?"Quitar completado":"Marcar como completado ✓")+'</button></div>';
+ qs("#module-content").innerHTML='<span class="lesson-tag">MÓDULO '+String(m.id).padStart(2,"0")+'</span><h2 class="lesson-title">'+m.title+'</h2><p class="lesson-copy">'+m.copy+'</p><div class="video-placeholder"><div><b>CLASE '+String(m.id).padStart(2,"0")+'</b><span>Espacio listo para tu video de YouTube no listado.</span></div></div><div class="exercise"><h4>Antes de marcarlo como completado</h4><ol>'+m.exercise.map(x=>"<li>"+x+"</li>").join("")+'</ol><button class="btn '+(profile.completed.includes(id)?"outline":"primary")+'" id="modal-complete">'+(profile.completed.includes(id)?"Quitar completado":"Marcar como completado ✓")+'</button></div>';
  qs("#module-dialog").showModal();
  qs("#modal-complete").onclick=()=>{toggleComplete(id);qs("#module-dialog").close()}
 }
@@ -62,7 +110,7 @@ function switchView(v){
  qs(".sidebar").classList.remove("open");window.scrollTo({top:0,behavior:"smooth"})
 }
 qs("#mobile-menu").onclick=()=>qs(".sidebar").classList.toggle("open");
-function loadNotes(){qsa("[data-note]").forEach(t=>{t.value=state.notes[t.dataset.note]||"";t.addEventListener("input",()=>{state.notes[t.dataset.note]=t.value;save()})})}
+function loadNotes(){qsa("[data-note]").forEach(t=>{t.value=profile.notes[t.dataset.note]||"";t.addEventListener("input",()=>{profile.notes[t.dataset.note]=t.value;save()})})}
 
 let currentSession="";
 qsa(".booking-btn").forEach(b=>b.onclick=()=>{currentSession=b.dataset.session;qs("#booking-title").textContent=currentSession;qs("#booking-dialog").showModal()});
@@ -71,7 +119,7 @@ qs("#booking-form").addEventListener("submit",e=>{
  e.preventDefault();
  const date=qs("#booking-date").value,slot=qs("#booking-slot").value,notes=qs("#booking-notes").value.trim();
  const subject=encodeURIComponent("START BRAND · Pedido de "+currentSession);
- const body=encodeURIComponent("Hola! Soy "+(state.name||"alumna/o")+".\n\nQuiero coordinar: "+currentSession+"\nFecha preferida: "+date+"\nFranja: "+slot+"\n\nQuiero revisar:\n"+(notes||"-")+"\n\nCuando confirmemos el horario, envíenme por favor la invitación de Google Calendar con el link de Meet.\n");
+ const body=encodeURIComponent("Hola! Soy "+(profile.name||"alumna/o")+".\n\nQuiero coordinar: "+currentSession+"\nFecha preferida: "+date+"\nFranja: "+slot+"\n\nQuiero revisar:\n"+(notes||"-")+"\n\nCuando confirmemos el horario, envíenme por favor la invitación de Google Calendar con el link de Meet.\n");
  location.href="mailto:"+EMAIL+"?subject="+subject+"&body="+body
 });
 
