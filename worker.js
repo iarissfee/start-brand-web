@@ -106,10 +106,6 @@ async function ensureSchema(env){
   if(schemaPromise) return schemaPromise;
   schemaPromise=(async()=>{
     if(!env.DB) throw new Error("DB_BINDING_MISSING");
-    try{
-      await env.DB.prepare("SELECT 1 FROM users LIMIT 1").first();
-      return;
-    }catch(_){}
     const stmts=[
       env.DB.prepare("CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, password_hash TEXT NOT NULL, password_salt TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'student', status TEXT NOT NULL DEFAULT 'active', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)"),
       env.DB.prepare("CREATE TABLE IF NOT EXISTS sessions (id_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, csrf_token TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL, last_seen INTEGER NOT NULL, FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)"),
@@ -126,11 +122,17 @@ async function ensureSchema(env){
       env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_mentor_user ON mentor_requests(user_id,created_at)"),
       env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_mentor_status ON mentor_requests(status,created_at)"),
       env.DB.prepare("CREATE TABLE IF NOT EXISTS modules (id INTEGER PRIMARY KEY, title TEXT NOT NULL, description TEXT NOT NULL, copy TEXT NOT NULL, exercises TEXT NOT NULL, video_url TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL)"),
-      env.DB.prepare("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+      env.DB.prepare("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)"),
+      env.DB.prepare("CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, title TEXT NOT NULL, price_cents INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'ARS', active INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL)"),
+      env.DB.prepare("CREATE TABLE IF NOT EXISTS purchases (id TEXT PRIMARY KEY, email TEXT NOT NULL, name TEXT NOT NULL, product_id TEXT NOT NULL, amount_cents INTEGER NOT NULL, currency TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'created', claim_token_hash TEXT NOT NULL, preference_id TEXT NOT NULL DEFAULT '', payment_id TEXT NOT NULL DEFAULT '', mp_status TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, FOREIGN KEY(product_id) REFERENCES products(id))"),
+      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_purchase_email ON purchases(email,created_at)"),
+      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_purchase_payment ON purchases(payment_id)"),
+      env.DB.prepare("CREATE TABLE IF NOT EXISTS enrollments (user_id TEXT NOT NULL, product_id TEXT NOT NULL, source TEXT NOT NULL, purchase_id TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'active', created_at INTEGER NOT NULL, PRIMARY KEY(user_id,product_id), FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)")
     ];
     await env.DB.batch(stmts);
     const t=now();
     await env.DB.batch(MODULE_SEED.map(m=>env.DB.prepare("INSERT OR IGNORE INTO modules(id,title,description,copy,exercises,video_url,updated_at) VALUES(?,?,?,?,?,'',?)").bind(m[0],m[1],m[2],m[3],m[4],t)));
+    await env.DB.prepare("INSERT OR IGNORE INTO products(id,title,price_cents,currency,active,updated_at) VALUES(?,?,0,'ARS',0,?)").bind(COURSE_ID,"START BRAND · Programa",t).run();
   })().catch(e=>{ schemaPromise=null; throw e; });
   return schemaPromise;
 }
