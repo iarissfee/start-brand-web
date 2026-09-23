@@ -403,6 +403,7 @@ async function handleApi(request,env){
     const pw=await newPasswordRecord(password), id=crypto.randomUUID(), t=now();
     await env.DB.batch([
       env.DB.prepare("INSERT INTO users(id,email,name,password_hash,password_salt,role,status,created_at,updated_at) VALUES(?,?,?,?,?,'student','active',?,?)").bind(id,invite.email,invite.name||invite.email.split("@")[0],pw.hash,pw.salt,t,t),
+      env.DB.prepare("INSERT INTO enrollments(user_id,product_id,source,purchase_id,status,created_at) VALUES(?,?,'invite','','active',?)").bind(id,COURSE_ID,t),
       env.DB.prepare("UPDATE invites SET used_at=? WHERE token_hash=? AND used_at IS NULL").bind(t,tokenHash)
     ]);
     const s=await createSession(env,id);
@@ -433,7 +434,7 @@ async function handleApi(request,env){
   const s=auth.session;
 
   if(path==="/api/session" && request.method==="GET"){
-    return json({user:{id:s.user_id,email:s.email,name:s.name,role:s.role},csrf:s.csrf});
+    return json({user:{id:s.user_id,email:s.email,name:s.name,role:s.role},csrf:s.csrf,course_access:await hasCourseAccess(env,s)});
   }
   if(path==="/api/logout" && request.method==="POST"){
     if(!csrfValid(request,s)) return json({error:"CSRF"},403);
@@ -441,10 +442,12 @@ async function handleApi(request,env){
     return json({ok:true},200,{"set-cookie":sessionCookie("",0)});
   }
   if(path==="/api/course" && request.method==="GET"){
+    if(!await hasCourseAccess(env,s)) return json({error:"NO_COURSE_ACCESS"},403);
     const rows=await env.DB.prepare("SELECT id,title,description,copy,exercises,video_url FROM modules ORDER BY id").all();
     return json({modules:(rows.results||[]).map(m=>({...m,exercises:JSON.parse(m.exercises||"[]")}))});
   }
   if(path==="/api/state" && request.method==="GET"){
+    if(!await hasCourseAccess(env,s)) return json({error:"NO_COURSE_ACCESS"},403);
     const [p,n,m]=await Promise.all([
       env.DB.prepare("SELECT module_id,completed FROM progress WHERE user_id=?").bind(s.user_id).all(),
       env.DB.prepare("SELECT note_key,value FROM notes WHERE user_id=?").bind(s.user_id).all(),
@@ -456,6 +459,7 @@ async function handleApi(request,env){
   if(request.method==="POST" && !csrfValid(request,s)) return json({error:"CSRF"},403);
 
   if(path==="/api/progress" && request.method==="POST"){
+    if(!await hasCourseAccess(env,s)) return json({error:"NO_COURSE_ACCESS"},403);
     let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
     const moduleId=Number(body.module_id), completed=body.completed?1:0;
     if(!Number.isInteger(moduleId)||moduleId<1||moduleId>100) return json({error:"INVALID_MODULE"},400);
@@ -463,6 +467,7 @@ async function handleApi(request,env){
     return json({ok:true});
   }
   if(path==="/api/notes" && request.method==="POST"){
+    if(!await hasCourseAccess(env,s)) return json({error:"NO_COURSE_ACCESS"},403);
     let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
     const allowed=new Set(["goal","audience","offer","difference","content","actions"]);
     const key=cleanText(body.key,40), value=typeof body.value==="string"?body.value.slice(0,10000):"";
@@ -471,6 +476,7 @@ async function handleApi(request,env){
     return json({ok:true});
   }
   if(path==="/api/mentoring" && request.method==="POST"){
+    if(!await hasCourseAccess(env,s)) return json({error:"NO_COURSE_ACCESS"},403);
     let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
     const sessionName=cleanText(body.session_name,120), date=cleanText(body.preferred_date,20), slot=cleanText(body.slot,40), notes=cleanText(body.notes,2000);
     if(!sessionName||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!slot) return json({error:"INVALID_DATA"},400);
