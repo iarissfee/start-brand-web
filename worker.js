@@ -3,6 +3,7 @@ const SESSION_DAYS = 7;
 const PBKDF2_ITERATIONS = 210000;
 const MAX_BODY = 24000;
 const COURSE_ID = "start-brand-course";
+const APP_VERSION = "2026-09-23-secure-2";
 let schemaPromise;
 
 const MODULE_SEED = [
@@ -263,7 +264,11 @@ async function handleApi(request,env){
   const url=new URL(request.url);
   const path=url.pathname;
 
-  if(path==="/api/health") return json({ok:true,db:true,service:"start-brand-campus"});
+  if(path==="/api/health") return json({ok:true,db:true,service:"start-brand-campus",version:APP_VERSION});
+  if(path==="/api/bootstrap-status" && request.method==="GET"){
+    const admin=await env.DB.prepare("SELECT id FROM users WHERE role='admin' LIMIT 1").first();
+    return json({version:APP_VERSION,admin_created:!!admin});
+  }
 
   if(path==="/api/payments/mercadopago/webhook" && request.method==="POST"){
     if(!await verifyMpWebhook(request,url,env.MP_WEBHOOK_SECRET)) return json({error:"INVALID_SIGNATURE"},401);
