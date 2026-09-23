@@ -1,8 +1,6 @@
 name: Cargar archivos de START Brand
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
