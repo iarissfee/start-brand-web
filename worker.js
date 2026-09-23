@@ -281,7 +281,7 @@ async function handleApi(request,env){
   }
 
   if(path==="/api/checkout" && request.method==="POST"){
-    if(!env.MP_ACCESS_TOKEN) return json({error:"PAYMENTS_NOT_CONFIGURED"},503);
+    if(!env.MP_ACCESS_TOKEN||!env.MP_WEBHOOK_SECRET) return json({error:"PAYMENTS_NOT_CONFIGURED"},503);
     let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
     const email=cleanText(body.email,254).toLowerCase(), name=cleanText(body.name,100);
     if(!emailOk(email)||!name) return json({error:"INVALID_DATA"},400);
@@ -509,7 +509,7 @@ async function handleApi(request,env){
         env.DB.prepare("SELECT id,title,price_cents,currency,active FROM products WHERE id=?").bind(COURSE_ID).first(),
         env.DB.prepare("SELECT id,email,name,amount_cents,currency,status,mp_status,created_at FROM purchases ORDER BY created_at DESC LIMIT 200").all()
       ]);
-      return json({users:users.results||[],invites:invites.results||[],mentoring:mentor.results||[],modules:mods.results||[],product,purchases:purchases.results||[]});
+      return json({users:users.results||[],invites:invites.results||[],mentoring:mentor.results||[],modules:mods.results||[],product,purchases:purchases.results||[],payments_configured:!!env.MP_ACCESS_TOKEN&&!!env.MP_WEBHOOK_SECRET});
     }
     if(path==="/api/admin/product" && request.method==="POST"){
       let body; try{ body=await readJson(request); }catch(e){ return json({error:e.message},400); }
