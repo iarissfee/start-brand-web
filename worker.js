@@ -1,9 +1,9 @@
 const BOOTSTRAP_HASH = "82c2e140ce06f9e9baee897fc98b2f36200cc1cabb0bdb2f3cfcbb93b3c8c640";
 const SESSION_DAYS = 7;
-const PBKDF2_ITERATIONS = 210000;
+const PBKDF2_ITERATIONS = 10000;
 const MAX_BODY = 24000;
 const COURSE_ID = "start-brand-course";
-const APP_VERSION = "2026-09-23-secure-3";
+const APP_VERSION = "2026-09-23-secure-4";
 let schemaPromise;
 
 const MODULE_SEED = [
@@ -366,11 +366,16 @@ async function handleApi(request,env){
     const token=cleanText(body.token,200), email=cleanText(body.email,254).toLowerCase(), name=cleanText(body.name,100), password=body.password;
     if(!timingSafe(await sha256Hex(token),BOOTSTRAP_HASH)) return json({error:"INVALID_BOOTSTRAP"},403);
     if(!emailOk(email)||!name||!passwordOk(password)) return json({error:"INVALID_DATA","message":"Usá un email válido y una contraseña de 12 caracteres o más."},400);
-    const pw=await newPasswordRecord(password), id=crypto.randomUUID(), t=now();
+    let pw;
+    try{ pw=await newPasswordRecord(password); }
+    catch(_){ return json({error:"PASSWORD_HASH_FAILED"},500); }
+    const id=crypto.randomUUID(), t=now();
     try{
       await env.DB.prepare("INSERT INTO users(id,email,name,password_hash,password_salt,role,status,created_at,updated_at) VALUES(?,?,?,?,?,'admin','active',?,?)").bind(id,email,name,pw.hash,pw.salt,t,t).run();
-    }catch(_){ return json({error:"ACCOUNT_EXISTS"},409); }
-    const s=await createSession(env,id);
+    }catch(_){ return json({error:"ADMIN_CREATE_FAILED"},500); }
+    let s;
+    try{ s=await createSession(env,id); }
+    catch(_){ return json({error:"SESSION_CREATE_FAILED"},500); }
     return json({ok:true,user:{id,email,name,role:"admin"},csrf:s.csrf},200,{"set-cookie":sessionCookie(s.raw)});
   }
 
