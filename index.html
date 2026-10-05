@@ -23,12 +23,49 @@
     .offer{padding:100px 0;background:var(--paper)}.offer-box{background:var(--ink);color:#fff;padding:clamp(34px,6vw,75px);display:grid;grid-template-columns:1.1fr .9fr;gap:70px;align-items:center}.offer-box h2{font-size:clamp(2.8rem,5vw,5.2rem);line-height:.95;letter-spacing:-.06em;margin:14px 0 24px}.offer-box h2 em{font-family:"Italiana",serif;color:var(--pink);font-weight:400}.offer-box p{color:#bbb;line-height:1.65;font-size:1.05rem}.offer-side{border-left:1px solid #444;padding-left:50px}.offer-side ul{list-style:none;padding:0;margin:0 0 28px}.offer-side li{padding:14px 0;border-bottom:1px solid #333;font-weight:600}.offer-side li:before{content:"→";color:var(--pink);margin-right:12px}.offer-side .button{width:100%}footer{padding:35px 0;background:#000;color:#aaa}.footer-inner{display:flex;justify-content:space-between;align-items:center}.footer-inner .logo{color:#fff}.footer-inner p{margin:0;font-size:.76rem;letter-spacing:.1em}
     @media(max-width:900px){nav a:not(.nav-buy){display:none}.hero{min-height:auto}.plan-first,.section-head,.offer-box,.smoke-lead{grid-template-columns:1fr}.plan-first{gap:45px}.plan-first-side{border-left:0;border-top:1px solid #444;padding:35px 0 0}.ecosystem{grid-template-columns:1fr 1fr}.eco:nth-child(2){border-right:0}.eco:nth-child(-n+2){border-bottom:1px solid var(--ink)}.cases,.voice-grid{grid-template-columns:1fr}.case{display:grid;grid-template-columns:.9fr 1.1fr}.smoke-video{min-height:480px}.motion-card{min-height:470px}.offer-side{border-left:0;border-top:1px solid #444;padding:35px 0 0}.offer-box{gap:20px}}
     @media(max-width:620px){.wrap{width:min(100% - 28px,1180px)}header{padding:0 14px}.nav-buy{padding:10px 13px}.hero{padding-top:105px}.plan-first h1{font-size:3.35rem}.plan-price{display:block}.plan-price span{display:block;margin-top:6px}.manifesto{padding:22px 0}section.content,.offer,.smoke-story{padding:72px 0}.smoke-copy{padding:34px 24px}.smoke-video{min-height:390px}.motion-intro{display:block;margin-top:58px}.motion-intro p{margin-top:20px}.motion-pair{grid-template-columns:1fr}.motion-card{min-height:510px}.ecosystem{grid-template-columns:1fr}.eco{border-right:0;border-bottom:1px solid var(--ink)!important;min-height:215px}.eco:last-child{border-bottom:0!important}.eco h3{margin-top:28px}.case{display:block}.voice{min-height:180px}.footer-inner{flex-direction:column;gap:15px;text-align:center}}
+
+    /* Dirección editorial: más humana, menos plantilla */
+    :root{--ink:#11110f;--paper:#eee9df;--pink:#e5307e;--acid:#e9db74;--muted:#625f59}
+    .hero{min-height:720px;background:#11110f;background-image:linear-gradient(90deg,transparent 49.9%,rgba(255,255,255,.045) 50%,transparent 50.1%);padding:120px 0 62px}
+    .hero:before{display:none}
+    .plan-first{grid-template-columns:1.04fr .72fr .38fr;gap:42px}
+    .plan-first h1{font-size:clamp(3.25rem,5.4vw,5.9rem)}
+    .plan-first h1 em{color:#ee4a8f}
+    .plan-first-copy>p{font-size:clamp(1rem,1.35vw,1.17rem);line-height:1.6;color:#d0cec8}
+    .plan-price strong{font-size:clamp(2.3rem,3.6vw,3.9rem)}
+    .plan-first-side{padding-left:36px;border-color:#4a4843}
+    .plan-first-side li{padding:15px 0;border-color:#3b3935;font-weight:650}
+    .plan-first-side li:before{content:"↗";color:#ee4a8f}
+    .plan-first-side .button{background:var(--paper)}
+    .founders-cut{margin:0;align-self:stretch;min-height:455px;position:relative;transform:rotate(1.6deg);background:#d8d3c9;overflow:hidden}
+    .founders-cut img{height:100%;object-fit:cover;object-position:center;filter:grayscale(1) contrast(1.05)}
+    .founders-cut figcaption{position:absolute;left:0;right:0;bottom:0;background:var(--paper);color:var(--ink);padding:12px 14px;font-size:.62rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+    .manifesto{background:var(--paper);border-bottom:1px solid var(--ink)}
+    .manifesto .wrap{justify-content:flex-start;text-align:left;font-size:clamp(1.08rem,1.8vw,1.55rem)}
+    .manifesto .wrap:before{content:"START / 01";font-size:.62rem;letter-spacing:.15em;margin-right:auto}
+    .manifesto em{color:var(--pink)}
+    .smoke-story{background:#151513}
+    .smoke-lead{grid-template-columns:.72fr 1.28fr;gap:0}
+    .smoke-copy{background:var(--paper);border-top:8px solid var(--pink)}
+    .smoke-copy h2 em{color:var(--pink)}
+    .smoke-video span{background:var(--paper)}
+    .motion-pair{grid-template-columns:1.08fr .92fr;gap:16px}
+    .motion-card:nth-child(2){margin-top:46px}
+    .motion-label span{color:var(--paper)}
+    .ecosystem{grid-template-columns:1fr 1fr;gap:1px;background:var(--ink)}
+    .eco{background:var(--paper);border:0;min-height:215px;padding:34px}
+    .eco:nth-child(2),.eco:nth-child(4){transform:translateY(18px)}
+    .cases{gap:14px}
+    .case:nth-child(2){transform:translateY(32px)}
+    .case:hover{transform:none}
+    @media(max-width:900px){.plan-first{grid-template-columns:1fr;gap:38px}.founders-cut{min-height:360px;transform:none}.eco:nth-child(2),.eco:nth-child(4),.case:nth-child(2){transform:none}.motion-card:nth-child(2){margin-top:0}}
+    @media(max-width:620px){.founders-cut{min-height:300px}.manifesto .wrap:before{display:none}.motion-pair,.ecosystem{grid-template-columns:1fr}.eco{min-height:205px}}
   </style>
 </head>
 <body>
   <header><a class="logo" href="#inicio">START <span>BRAND</span> <b>↗</b></a><nav aria-label="Principal"><a href="#sistema">El sistema</a><a href="#casos">Casos reales</a><a class="nav-buy" href="campus/comprar.html">Comprar ahora</a></nav></header>
   <main>
-    <section class="hero" id="inicio"><div class="wrap plan-first"><div class="plan-first-copy"><span class="eyebrow">PROGRAMA START BRAND</span><h1>Dejá de juntar cursos.<em>Empezá a construir.</em></h1><p>No salís solo con información: salís entendiendo tu marca, comunicándola mejor y con un recorrido digital preparado para vender.</p><div class="plan-price"><strong>$750.000</strong><span>ARS · PAGO ÚNICO</span></div></div><div class="plan-first-side"><ul><li>Tu propuesta, clara</li><li>Tu contenido, con dirección</li><li>Tu landing, publicada</li><li>Tu checkout, conectado</li></ul><a class="button" href="campus/comprar.html">Pagar ahora con Mercado Pago ↗</a><small>Pago seguro · acceso al campus y acompañamiento</small></div></div></section>
+    <section class="hero" id="inicio"><div class="wrap plan-first"><div class="plan-first-copy"><span class="eyebrow">PROGRAMA START BRAND</span><h1>Dejá de juntar cursos.<em>Empezá a construir.</em></h1><p>No salís solo con información: salís entendiendo tu marca, comunicándola mejor y con un recorrido digital preparado para vender.</p><div class="plan-price"><strong>$750.000</strong><span>ARS · PAGO ÚNICO</span></div></div><div class="plan-first-side"><ul><li>Tu propuesta, clara</li><li>Tu contenido, con dirección</li><li>Tu landing, publicada</li><li>Tu checkout, conectado</li></ul><a class="button" href="campus/comprar.html">Pagar ahora con Mercado Pago ↗</a><small>Pago seguro · acceso al campus y acompañamiento</small></div><figure class="founders-cut"><img src="assets/original-3.png" alt="Iara Valentino y Abril Duhalde, creadoras de START BRAND"><figcaption>Hecho por personas · para negocios reales</figcaption></figure></div></section>
     <div class="manifesto"><div class="wrap">Una idea. <em>Una marca.</em> Un ecosistema completo que vende.</div></div>
     <section class="smoke-story" id="humo" aria-label="Basta de vender humo y ejemplos de campañas reales">
       <div class="wrap">
